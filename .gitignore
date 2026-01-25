@@ -1,0 +1,14 @@
+# Supabase
+.branches
+.temp
+.env
+
+# Docker volumes et data
+volumes/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
