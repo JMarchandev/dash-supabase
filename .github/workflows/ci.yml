@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Start Supabase local
+        run: supabase start
+      
+      - name: Apply migrations
+        run: supabase db push
+      
+      - name: Stop Supabase local
+        run: supabase stop
