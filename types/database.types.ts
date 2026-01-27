@@ -34,6 +34,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      browser_sessions: {
+        Row: {
+          created_at: string | null
+          favicon_url: string | null
+          id: string
+          is_visible: boolean | null
+          last_accessed_at: string | null
+          position: number
+          title: string | null
+          updated_at: string | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          favicon_url?: string | null
+          id?: string
+          is_visible?: boolean | null
+          last_accessed_at?: string | null
+          position: number
+          title?: string | null
+          updated_at?: string | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          favicon_url?: string | null
+          id?: string
+          is_visible?: boolean | null
+          last_accessed_at?: string | null
+          position?: number
+          title?: string | null
+          updated_at?: string | null
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "browser_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
