@@ -14,7 +14,7 @@ ALTER TABLE user_credentials ADD COLUMN IF NOT EXISTS account_label TEXT;
 
 -- Step 5: Create new unique constraint allowing multiple accounts per service
 -- Note: This allows NULL account_email temporarily for existing records
-CREATE UNIQUE INDEX IF NOT EXISTS user_credentials_unique_account 
+CREATE UNIQUE INDEX IF NOT EXISTS user_credentials_unique_account
 ON user_credentials(user_id, service, account_email) 
 WHERE account_email IS NOT NULL;
 

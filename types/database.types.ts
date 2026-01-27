@@ -1,5 +1,3 @@
-Using workdir /Users/mayasquad/Documents/dev perso/my-dash
-Connecting to db 5432
 export type Json =
   | string
   | number
@@ -72,6 +70,8 @@ export type Database = {
       user_credentials: {
         Row: {
           access_token: string
+          account_email: string | null
+          account_label: string | null
           created_at: string | null
           expires_at: string | null
           id: string
@@ -83,6 +83,8 @@ export type Database = {
         }
         Insert: {
           access_token: string
+          account_email?: string | null
+          account_label?: string | null
           created_at?: string | null
           expires_at?: string | null
           id?: string
@@ -94,6 +96,8 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          account_email?: string | null
+          account_label?: string | null
           created_at?: string | null
           expires_at?: string | null
           id?: string
@@ -121,6 +125,7 @@ export type Database = {
           layout_data: Json
           updated_at: string | null
           user_id: string
+          workspace_id: string
         }
         Insert: {
           breakpoint: string
@@ -129,6 +134,7 @@ export type Database = {
           layout_data: Json
           updated_at?: string | null
           user_id: string
+          workspace_id: string
         }
         Update: {
           breakpoint?: string
@@ -137,10 +143,53 @@ export type Database = {
           layout_data?: Json
           updated_at?: string | null
           user_id?: string
+          workspace_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "widget_layouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "widget_layouts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          position: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          position: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspaces_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -278,5 +327,3 @@ export const Constants = {
   },
 } as const
 
-A new version of Supabase CLI is available: v2.72.7 (currently installed v2.26.9)
-We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
