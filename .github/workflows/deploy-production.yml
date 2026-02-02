@@ -24,8 +24,15 @@ jobs:
           echo "Current directory: $(pwd)"
           echo "Files in current directory:"
           ls -la
-          echo "Files in migrations:"
+          echo ""
+          echo "Checking for config.toml:"
+          ls -la config.toml || echo "config.toml not found"
+          echo ""
+          echo "Checking for migrations directory:"
           ls -la migrations/ || echo "migrations folder not found"
+          echo ""
+          echo "Content of migrations directory:"
+          ls -la migrations/*.sql 2>/dev/null || echo "No SQL files found"
 
       - name: Link to Production project
         run: supabase link --project-ref ${{ secrets.PRODUCTION_PROJECT_ID }}
