@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: supabase
       
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -18,9 +20,11 @@ jobs:
           version: latest
       
       - name: Start Supabase local development setup
+        working-directory: supabase
         run: supabase db start
       
       - name: Verify generated types are checked in
+        working-directory: supabase
         run: |
           supabase gen types typescript --local > types/database.types.ts
           if ! git diff --ignore-space-at-eol --exit-code --quiet types/database.types.ts; then
@@ -30,7 +34,9 @@ jobs:
           fi
       
       - name: Run database tests
+        working-directory: supabase
         run: supabase test db
       
       - name: Stop Supabase local
+        working-directory: supabase
         run: supabase stop

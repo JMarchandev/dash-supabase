@@ -21,64 +21,18 @@ jobs:
         with:
           version: latest
 
-      - name: Debug - List files
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Files in current directory:"
-          ls -la
-          echo ""
-          echo "Files in supabase directory:"
-          ls -la supabase/
-          echo ""
-          echo "Files in supabase/migrations:"
-          ls -la supabase/migrations/
-
       - name: Link to Production project
         working-directory: supabase
-        run: |
-          # Clean .temp directory to force fresh scan
-          rm -rf .temp
-          supabase link --project-ref ${{ secrets.PRODUCTION_PROJECT_ID }}
+        run: supabase link --project-ref ${{ secrets.PRODUCTION_PROJECT_ID }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      - name: Debug - Check link status
-        working-directory: supabase
-        run: |
-          echo "Checking .temp directory:"
-          ls -la .temp/ || echo ".temp not found"
-          echo ""
-          echo "Project ref:"
-          cat .temp/project-ref || echo "project-ref file not found"
-          echo ""
-          echo "Checking migrations are readable:"
-          cat migrations/00000000000000_init_migrations_schema.sql | head -5
-
-      - name: Check migration status
-        working-directory: supabase
-        run: |
-          echo "Checking migration status..."
-          supabase migration list --debug
-        env:
-          SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
-
       - name: Push database migrations
         working-directory: supabase
-        run: |
-          echo "Attempting to push migrations..."
-          # Try to push only the new migrations that don't exist in remote
-          supabase db push --include-all || {
-            echo "Push failed, trying alternative approach..."
-            echo "Marking old migrations as already applied..."
-            supabase migration repair --status applied 00000000000000 20260125165349 20260125165410 20260125165413 20260125165414 20260125185617
-            echo "Now pushing remaining migrations..."
-            supabase db push
-          }
+        run: supabase db push
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
       
-      - name: Generate and verify types
+      - name: Generate TypeScript types
         working-directory: supabase
-        run: |
-          supabase gen types typescript --linked > types/database.types.ts
-          echo "✅ Types generated successfully"
+        run: supabase gen types typescript --linked > types/database.types.ts
