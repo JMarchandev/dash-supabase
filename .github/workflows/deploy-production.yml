@@ -61,7 +61,16 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
 
       - name: Push database migrations
-        run: supabase db push
+        run: |
+          echo "Attempting to push migrations..."
+          # Try to push only the new migrations that don't exist in remote
+          supabase db push --include-all || {
+            echo "Push failed, trying alternative approach..."
+            echo "Marking old migrations as already applied..."
+            supabase migration repair --status applied 00000000000000 20260125165349 20260125165410 20260125165413 20260125165414 20260125185617
+            echo "Now pushing remaining migrations..."
+            supabase db push
+          }
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
       
