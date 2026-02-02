@@ -19,6 +19,14 @@ jobs:
         with:
           version: latest
 
+      - name: Debug - List files
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Files in current directory:"
+          ls -la
+          echo "Files in migrations:"
+          ls -la migrations/ || echo "migrations folder not found"
+
       - name: Link to Production project
         run: supabase link --project-ref ${{ secrets.PRODUCTION_PROJECT_ID }}
         env:
