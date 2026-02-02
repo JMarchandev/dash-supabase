@@ -3,58 +3,92 @@
 ## 🔄 Workflows Disponibles
 
 ### 1. **CI** (`ci.yml`) - Tests automatiques
-- Se déclenche sur **chaque Pull Request**
+- Se déclenche sur **chaque Pull Request** et manuellement via `workflow_dispatch`
 - Lance Supabase en local avec Docker
-- Applique les migrations pour vérifier qu'elles fonctionnent
+- Vérifie que les types TypeScript sont à jour
+- Exécute les tests de la base de données
 - Arrête l'environnement local
 - ✅ **Aucun secret requis** (tout en local)
 
 ### 2. **Deploy Staging** (`deploy-staging.yml`)
-- Se déclenche sur push vers la branche `staging`
+- Se déclenche sur push vers les branches `staging` ou `develop`
 - Déploie automatiquement sur l'environnement de staging
+- Génère les types TypeScript à jour
+- Peut être déclenché manuellement via `workflow_dispatch`
 
 ### 3. **Deploy Production** (`deploy-production.yml`)
 - Se déclenche sur push vers la branche `main`
-- Nécessite une approbation manuelle avant déploiement
+- Utilise l'environnement protégé `production` avec approbation requise
+- Déploie sur l'environnement de production
+- Génère les types TypeScript à jour
+- Peut être déclenché manuellement via `workflow_dispatch`
 
 ---
 
-## 📋 Configuration des Secrets
+## 📋 Configuration des Secrets et Environnements
 
-Avant de pouvoir utiliser les workflows de déploiement, vous devez configurer les secrets GitHub.
+Avant de pouvoir utiliser les workflows de déploiement, vous devez configurer les secrets GitHub et les environnements protégés.
 
-### Étapes :
+### Étape 1 : Configurer les Environnements Protégés
 
 1. **Aller dans votre repository GitHub**
-   - Settings → Secrets and variables → Actions
+   - Settings → Environments
 
-2. **Ajouter les secrets suivants :**
+2. **Créer l'environnement `staging`**
+   - Cliquer sur "New environment"
+   - Nom : `staging`
+   - (Optionnel) Ajouter des reviewers si vous voulez une approbation pour staging
 
-#### `SUPABASE_ACCESS_TOKEN`
+3. **Créer l'environnement `production`**
+   - Cliquer sur "New environment"
+   - Nom : `production`
+   - ✅ **Cocher "Required reviewers"**
+   - Ajouter les personnes autorisées à approuver les déploiements en production
+   - (Optionnel) Ajouter une "Wait timer" pour retarder les déploiements
+
+### Étape 2 : Ajouter les Secrets GitHub
+
+**Aller dans Settings → Secrets and variables → Actions**
+
+#### Secrets Partagés (Repository secrets)
+
+##### `SUPABASE_ACCESS_TOKEN`
 - Aller sur [supabase.com/dashboard](https://supabase.com/dashboard)
 - Account → Access Tokens
-- Créer un nouveau token
-- Copier et ajouter comme secret
+- Créer un nouveau token avec les permissions :
+  - ✅ All projects access
+  - ✅ Read/Write permissions
+- Copier et ajouter comme secret GitHub
 
-#### `STAGING_PROJECT_ID`
-- Aller sur votre projet Staging dans Supabase
-- Settings → General → Reference ID
-- Copier l'ID (format: `abcdefghijklmnop`)
+#### Secrets Spécifiques par Environnement
 
-#### `STAGING_DB_PASSWORD`
-- Aller sur votre projet Staging dans Supabase
-- Settings → Database → Database Password
-- Utiliser le mot de passe existant ou en générer un nouveau
+##### Pour l'environnement `staging` :
 
-#### `PRODUCTION_PROJECT_ID`
-- Aller sur votre projet Production dans Supabase
-- Settings → General → Reference ID
-- Copier l'ID
+1. **`STAGING_PROJECT_ID`**
+   - Aller sur votre projet Staging dans Supabase
+   - Settings → General → Reference ID
+   - Copier l'ID (format: `abcdefghijklmnop`)
+   - Ajouter comme secret dans l'environnement `staging` ou comme repository secret
 
-#### `PRODUCTION_DB_PASSWORD`
-- Aller sur votre projet Production dans Supabase
-- Settings → Database → Database Password
-- Utiliser le mot de passe existant
+2. **`STAGING_DB_PASSWORD`**
+   - Aller sur votre projet Staging dans Supabase
+   - Settings → Database → Database Password
+   - Utiliser le mot de passe existant ou en générer un nouveau
+   - Ajouter comme secret dans l'environnement `staging` ou comme repository secret
+
+##### Pour l'environnement `production` :
+
+1. **`PRODUCTION_PROJECT_ID`**
+   - Aller sur votre projet Production dans Supabase
+   - Settings → General → Reference ID
+   - Copier l'ID
+   - Ajouter comme secret dans l'environnement `production` ou comme repository secret
+
+2. **`PRODUCTION_DB_PASSWORD`**
+   - Aller sur votre projet Production dans Supabase
+   - Settings → Database → Database Password
+   - Utiliser le mot de passe existant
+   - Ajouter comme secret dans l'environnement `production` ou comme repository secret
 
 ---
 
@@ -85,14 +119,16 @@ git push origin staging
 ### 3. Merge vers Production
 ```bash
 git checkout main
-git merge staging
+git merge staging  # ou develop selon votre workflow
 git push origin main
 ```
 ⚠️ **Déploiement avec approbation manuelle**
-- Le workflow se met en pause
-- Notification aux reviewers
-- Approbation requise
-- Déploiement vers production
+- Le workflow démarre automatiquement
+- Le workflow se met en pause avant le déploiement
+- Les reviewers configurés reçoivent une notification
+- Approbation manuelle requise dans GitHub Actions
+- Le déploiement continue après approbation
+- Types TypeScript générés automatiquement
 
 ---
 
@@ -117,19 +153,30 @@ Le workflow `deploy-production.yml` utilise l'environnement `production` qui né
 ## 📦 Ce que Font les Workflows
 
 ### CI (Tests automatiques)
-1. `supabase start` - Lance Supabase localement avec Docker
-2. `supabase db push` - Applique les migrations sur l'instance locale
-3. `supabase stop` - Arrête l'instance locale
+1. `supabase db start` - Lance Supabase localement avec Docker
+2. `supabase gen types typescript --local` - Génère les types TypeScript depuis le schéma local
+3. Vérifie que les types générés correspondent aux types commités
+4. `supabase test db` - Exécute les tests de la base de données (si configurés)
+5. `supabase stop` - Arrête l'instance locale
 
 **Avantages :**
 - ✅ Détecte les erreurs de migration avant le merge
 - ✅ Valide la syntaxe SQL
 - ✅ Vérifie que les migrations s'appliquent dans l'ordre
+- ✅ Garantit que les types TypeScript sont à jour
+- ✅ Exécute les tests automatisés
 - ✅ Aucun impact sur les environnements distants
 
 ### Deploy Staging/Production
-1. `supabase link` - Connecte le CLI au projet Supabase Cloud
-2. `supabase db push` - Applique les migrations manquantes sur le cloud
+1. `supabase link --project-ref $PROJECT_ID` - Connecte le CLI au projet Supabase Cloud
+2. `supabase db push --include-all` - Applique TOUTES les migrations manquantes sur le cloud
+3. `supabase gen types typescript --linked` - Génère les types TypeScript depuis le schéma distant
+
+**Avantages :**
+- ✅ Déploiement automatique des migrations
+- ✅ Types TypeScript générés depuis le schéma réel
+- ✅ `--include-all` garantit que toutes les migrations sont appliquées
+- ✅ Environnements protégés avec approbation manuelle
 
 ---
 
@@ -185,23 +232,40 @@ Le workflow `deploy-production.yml` utilise l'environnement `production` qui né
 1. **Toujours créer une PR avant de merger**
    - Permet au CI de valider les migrations
    - Revue de code par l'équipe
+   - Vérifie automatiquement que les types sont à jour
 
 2. **Toujours tester sur staging d'abord**
-   - Merge vers `staging` → Test complet → Merge vers `main`
+   - Merge vers `staging` ou `develop` → Test complet → Merge vers `main`
+   - Valide les migrations dans un environnement réel
 
 3. **Ne jamais skip l'approbation production**
    - Toujours vérifier que staging fonctionne avant d'approuver
+   - Vérifier les logs du déploiement staging
+   - Tester l'application sur staging avant d'approuver production
 
 4. **Sauvegarder avant les migrations importantes**
    - Backup manuel depuis Supabase Dashboard si migration risquée
+   - Documentation des migrations complexes
 
 5. **Versionner les migrations**
-   - Ne jamais modifier une migration déjà déployée
-   - Créer une nouvelle migration pour les corrections
+   - ❌ **JAMAIS modifier une migration déjà déployée**
+   - ✅ Créer une nouvelle migration pour les corrections
+   - Utiliser `supabase migration new fix_description` pour corriger
 
 6. **Monitorer les déploiements**
-   - Vérifier les logs GitHub Actions
+   - Vérifier les logs GitHub Actions en temps réel
    - Vérifier les logs Supabase après déploiement
+   - Tester l'application après chaque déploiement
+
+7. **Garder les types à jour**
+   - Commiter les types générés avec chaque migration
+   - Le CI vérifiera automatiquement qu'ils correspondent
+   - Ne jamais modifier manuellement `database.types.ts`
+
+8. **Utiliser les déploiements manuels si nécessaire**
+   - Tous les workflows supportent `workflow_dispatch`
+   - Permet de redéployer manuellement depuis l'interface GitHub
+   - Utile pour les rollbacks ou les hotfixes
 
 ---
 

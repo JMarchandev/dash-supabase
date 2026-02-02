@@ -2,10 +2,12 @@ name: CI
 
 on:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -15,11 +17,20 @@ jobs:
         with:
           version: latest
       
-      - name: Start Supabase local
-        run: supabase start
+      - name: Start Supabase local development setup
+        run: supabase db start
       
-      - name: Apply migrations
-        run: supabase db push
+      - name: Verify generated types are checked in
+        run: |
+          supabase gen types typescript --local > types/database.types.ts
+          if ! git diff --ignore-space-at-eol --exit-code --quiet types/database.types.ts; then
+            echo "Detected uncommitted changes after build. See status below:"
+            git diff
+            exit 1
+          fi
+      
+      - name: Run database tests
+        run: supabase test db
       
       - name: Stop Supabase local
         run: supabase stop
